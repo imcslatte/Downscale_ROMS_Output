@@ -1,7 +1,7 @@
 """
-DOWNSCALE_L0_v2.py
+DOWNSCALE_ROMS_OUTPUT.py
 
-Created by Elias Hunter, hunter@marine.rutgers.edu, 7/29/2023 
+Created by Elias Hunter, hunter@marine.rutgers.edu, 12/19/2023 
 """
 import os,glob
 import numpy as np
@@ -82,8 +82,8 @@ t3N=6
 t3end=t3step*t3N
 
 #Output file flags, if True create file
-INIflag=True
-CLMflag=False
+INIflag=False
+CLMflag=True
 BRYflag=False
 
 
@@ -152,7 +152,12 @@ def main():
         print(f"Initilization file processing time: {elapsed_time} seconds")
 
     if  CLMflag:
-        pass
+        start_time=time.time()
+        downscale_clm_file(cfgrd,dsqckl0,dshisl0,dsl0sub)
+        end_time=time.time()
+        elapsed_time = end_time - start_time
+        print(f"climatology  file processing time: {elapsed_time} seconds")
+
     if  BRYflag:
         start_time=time.time()
         downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub)
@@ -345,7 +350,7 @@ def downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
                     temp['south'][:,xi]=ifun(tmpSz2[:,xi])
                    
                     ifun=interp1d(tmpSz[:,xi],saltS[:,xi],kind='cubic',bounds_error=False,fill_value=(saltS[0,xi],saltS[-1,xi]))
-                    salt['south'][:,xi]==ifun(tmpSz2[:,xi])
+                    salt['south'][:,xi]=ifun(tmpSz2[:,xi])
                  
         
                     ifun=interp1d(tmpSz[:,xi],u_eastS[:,xi],kind='cubic',bounds_error=False,fill_value=(u_eastS[0,xi],u_eastS[-1,xi]))
@@ -410,7 +415,7 @@ def downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
                     temp['east'][:,eta]=ifun(tmpEz2[:,eta])
                    
                     ifun=interp1d(tmpEz[:,eta],saltE[:,eta],kind='cubic',bounds_error=False,fill_value=(saltE[0,eta],saltE[-1,eta]))
-                    salt['east'][:,eta]==ifun(tmpEz2[:,eta])
+                    salt['east'][:,eta]=ifun(tmpEz2[:,eta])
                  
         
                     ifun=interp1d(tmpEz[:,eta],u_eastE[:,eta],kind='cubic',bounds_error=False,fill_value=(u_eastE[0,eta],u_eastE[-1,eta]))
@@ -691,6 +696,189 @@ def dataset_get_Z(xromsds,varnew):
     
 
     return xromsds,xromsds_z       
+
+def downscale_clm_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
+    
+#Create input grid
+    tmp=dsl0sub.rename({'mask_rho':'mask'})
+    tmp=tmp.rename({'lat_rho':'lat'})
+    tmp=tmp.rename({'lon_rho':'lon'})
+    
+    
+    varnew =cfgrd
+    varnew=varnew.rename({'lat_rho':'lat'})
+    varnew=varnew.rename({'lon_rho':'lon'})
+    varnew=varnew.rename({'mask_rho':'mask'})
+    regridder = xe.Regridder( tmp,varnew, "bilinear",extrap_method="nearest_s2d")  
+    
+    print(f'Processing Climatology file: {clmfile}')
+    rutil.create_clm_file(clmfile,cfgrd,tunits)
+
+        
+
+##############################################################################################
+# 3-D variable interpolation
+##############################################################################################
+    times_00Z =dshisl0.ocean_time.values[dshisl0.ocean_time.values.astype('datetime64[D]') == dshisl0.ocean_time.values]
+    for ind,t in enumerate(times_00Z):
+        print(f'Procesing Climatology time: {t}')
+        dsqckl0_I=dsqckl0.isel(ocean_time=0)
+        dshisl0_I=dshisl0.isel(ocean_time=0)
+        dshisl0_I.load()
+        dsqckl0_I.load()
+        #convert UV to rho grid and rotate by angle.  
+        (xromqckL0,gridqckL0)=xroms.roms_dataset(dsqckl0_I,Vtransform=L0Vtransform)
+        uv=rutil.uv_rot_2d(xromqckL0.ubar, xromqckL0.vbar, gridqckL0,xromqckL0.angle)
+        ru=uv[0]
+        rv=uv[1]
+        xromqckL0=xr.merge([xromqckL0,ru,rv])
+      
+        (xromhisL0,gridhisL0)=xroms.roms_dataset(dshisl0_I,Vtransform=L0Vtransform)
+        uv=rutil.uv_rot(xromhisL0.u, xromhisL0.v, gridhisL0,xromhisL0.angle)
+        ruhis=uv[0]
+        rvhis=uv[1]
+        xromhisL0=xr.merge([xromhisL0,ruhis,rvhis])
+        
+        # this just makes sure chunking is good.  
+        dimension_to_remove = 'xi_u'
+        xromqckL0 = xromqckL0.drop_vars([var for var in xromqckL0.variables if dimension_to_remove in xromqckL0[var].dims]) 
+        xromhisL0 = xromhisL0.drop_vars([var for var in xromhisL0.variables if dimension_to_remove in xromhisL0[var].dims])
+        dimension_to_remove ='eta_v'
+        xromqckL0 = xromqckL0.drop_vars([var for var in xromqckL0.variables if dimension_to_remove in xromqckL0[var].dims])
+        xromhisL0 = xromhisL0.drop_vars([var for var in xromhisL0.variables if dimension_to_remove in xromhisL0[var].dims])
+        
+        xromhisL0=xromhisL0.rename({'mask_rho':'mask'})
+        xromqckL0=xromqckL0.rename({'mask_rho':'mask'})
+        
+        
+##############################################################################################
+#Regridding
+##############################################################################################
+        xromqckL1 = regridder(xromqckL0,keep_attrs=True)
+        xromqckL1['xi_u']=varnew['xi_u']
+        xromqckL1['eta_v']=varnew['eta_v']
+        xromhisL1 = regridder(xromhisL0,keep_attrs=True)
+        xromhisL1['xi_u']=varnew['xi_u']
+        xromhisL1['eta_v']=varnew['eta_v']
+##############################################################################################
+#Get depths of L0 and L1 grid. 
+##############################################################################################
+     
+        xromhisL1=rechunk_eta_xi(xromhisL1)    
+        varnew=rechunk_eta_xi(varnew)
+        tmp=dataset_get_Z(xromhisL1,varnew)
+        xromhisL1=tmp[0]
+        xromhisL1_z=tmp[1]   
+    
+
+        dim_dict=xromhisL1.dims
+##############################################################################################
+#Initialize Arrays
+##############################################################################################
+        temp = np.empty((L1N,dim_dict['eta_rho'],dim_dict['xi_rho']))
+        temp[:]=np.nan
+        salt = np.empty((L1N,dim_dict['eta_rho'],dim_dict['xi_rho']))
+        salt[:]=np.nan
+        u_east = np.empty((L1N,dim_dict['eta_rho'],dim_dict['xi_rho']))
+        u_east[:]=np.nan
+        v_north = np.empty((L1N,dim_dict['eta_rho'],dim_dict['xi_rho']))
+        v_north[:]=np.nan
+##############################################################################################
+#Loading Data for interpolation
+##############################################################################################
+        mask=xromhisL1_z.mask.values
+        tmpz=xromhisL1.z_rho.values
+        tmpz2=xromhisL1_z.z_rho.values
+        temp_I=xromhisL1.temp.values
+        salt_I=xromhisL1.salt.values
+        u_east_I=xromhisL1.u_eastward.values
+        v_north_I=xromhisL1.v_northward.values
+
+##############################################################################################
+#Vertical Interpolation 
+##############################################################################################
+        start_time=time.time()
+        for eta in range(0,dim_dict['eta_rho']):
+            for xi in range(0,dim_dict['xi_rho']):
+                maskflag=mask[eta,xi]
+                if maskflag==0.0:
+                    continue
+                    
+ 
+                ifun=interp1d(tmpz[:,eta,xi],temp_I[:,eta,xi],kind='cubic',bounds_error=False,fill_value=(temp_I[0,eta,xi],temp_I[-1,eta,xi]))
+                ntmp=ifun(tmpz2[:,eta,xi])
+                temp[:,eta,xi]=ntmp
+                
+     
+                
+                ifun=interp1d(tmpz[:,eta,xi],salt_I[:,eta,xi],kind='cubic',bounds_error=False,fill_value=(salt_I[0,eta,xi],salt_I[-1,eta,xi]))
+                ntmp=ifun(tmpz2[:,eta,xi])
+                salt[:,eta,xi]=ntmp
+
+                
+                ifun=interp1d(tmpz[:,eta,xi],u_east_I[:,eta,xi],kind='cubic',bounds_error=False,fill_value=(u_east_I[0,eta,xi],u_east_I[-1,eta,xi]))
+                ntmp=ifun(tmpz2[:,eta,xi])
+                u_east[:,eta,xi]=ntmp
+                
+ 
+                
+                ifun=interp1d(tmpz[:,eta,xi],v_north_I[:,eta,xi],kind='cubic',bounds_error=False,fill_value=(v_north_I[0,eta,xi],v_north_I[-1,eta,xi]))
+                ntmp=ifun(tmpz2[:,eta,xi])
+                v_north[:,eta,xi]=ntmp
+            
+        end_time=time.time()
+        elapsed_time = end_time - start_time
+        print(f"processing time: {elapsed_time} seconds")
+            
+##############################################################################################
+#ROTATION  
+############################################################################################## 
+        xromhisL1_z['temp']=(('s_rho', 'eta_rho', 'xi_rho'),temp)
+        xromhisL1_z['salt']=(('s_rho', 'eta_rho', 'xi_rho'),salt) 
+        xromhisL1_z['u_eastward']=(('s_rho', 'eta_rho', 'xi_rho'),u_east) 
+        xromhisL1_z['v_northward']=(('s_rho', 'eta_rho', 'xi_rho'),v_north) 
+        xromhisL1_z['vbar_northward']=xromqckL1['vbar_northward']
+        xromhisL1_z['ubar_eastward']=xromqckL1['ubar_eastward']
+        (xromhisL1_z,gridhisL1_z)=xroms.roms_dataset(xromhisL1_z,Vtransform=L1Vtransform)
+        
+        uv=rutil.uv_rot_2d(xromhisL1_z.ubar_eastward, xromhisL1_z.vbar_northward, gridhisL1_z,xromhisL1_z.angle,reverse=True)
+        ru=uv[0]
+        rv=uv[1]
+        xromhisL1_z=xr.merge([xromhisL1_z,ru,rv])
+        
+        uv=rutil.uv_rot(xromhisL1_z.u_eastward, xromhisL1_z.v_northward, gridhisL1_z,xromhisL1_z.angle,reverse=True)
+        ruhis=uv[0]
+        rvhis=uv[1]
+        xromhisL1_z=xr.merge([xromhisL1_z,ruhis,rvhis])
+    
+
+    ##############################################################################################
+    #Write Output to netcdf file
+    ##############################################################################################
+        
+        timeout=(t-np.datetime64(rtime)) / np.timedelta64(1, 'D')
+        ncid = nc.Dataset(clmfile, "r+", format="NETCDF4")
+        ncid.variables['ocean_time'][ind]=timeout
+        ncid.variables['zeta_time'][ind]=timeout
+        ncid.variables['v2d_time'][ind]=timeout
+        ncid.variables['v3d_time'][ind]=timeout
+        ncid.variables['salt_time'][ind]=timeout
+        ncid.variables['temp_time'][ind]=timeout
+
+
+        ncid.variables['ubar'][ind,:,:]=xromhisL1_z.ubar.values[:,:]
+        ncid.variables['vbar'][ind,:,:]=xromhisL1_z.vbar.values[:,:]
+        ncid.variables['zeta'][ind,:,:]=xromhisL1_z.zeta.values[:,:]
+        ncid.variables['u'][ind,:,:,:]=xromhisL1_z.u.values[:,:,:]
+        ncid.variables['v'][ind,:,:,:]=xromhisL1_z.v.values[:,:,:]
+        ncid.variables['salt'][ind,:,:,:]=xromhisL1_z.salt.values[:,:,:]
+        ncid.variables['temp'][ind,:,:,:]=xromhisL1_z.temp.values[:,:,:]
+
+
+        ncid.sync()
+        ncid.close()
+
+        
         
 def downscale_init_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
     tmp=dsl0sub.rename({'mask_rho':'mask'})
@@ -779,25 +967,14 @@ def downscale_init_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
     u_east_I=xromhisL1.u_eastward.values
     v_north_I=xromhisL1.v_northward.values
 
-    tlat=[]
-    tlon=[]
+ 
     start_time=time.time()
     for eta in range(0,dim_dict['eta_rho']):
         for xi in range(0,dim_dict['xi_rho']):
             maskflag=mask[eta,xi]
             if maskflag==0.0:
                 continue
-                
-    
-            # tmpz=xromhisL1_z.z_rho.isel(eta_rho=eta,xi_rho=xi)
-    
-            
-            # tmp=xromhisL1.temp.isel(eta_rho=eta,xi_rho=xi)
-            # test=np.isnan(tmp.values).any()
-            
-            # if test:
-            #     tlat.append(tmp.lat_rho.values)
-            #     tlon.append(tmp.lon_rho.values)
+
     
             ifun=interp1d(tmpz[:,eta,xi],temp_I[:,eta,xi],kind='cubic',bounds_error=False,fill_value=(temp_I[0,eta,xi],temp_I[-1,eta,xi]))
             ntmp=ifun(tmpz2[:,eta,xi])
