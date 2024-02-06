@@ -31,7 +31,8 @@ rtime=np.datetime64(datetime.datetime.now().date())
 
 #Donor grid Info
 # % Enter vertical characteristics for the L0 grid
-L0grdfile='/home/hunter/roms/NOPP/forecast/grids/L0/NewEngland_qck_grid.nc' # can be a thredds url
+L0grdfile='/home/hunter/roms/NOPP/forecast/grids/L0/useast_grd5_2_cnapsv2.nc'
+#L0grdfile='/home/hunter/roms/NOPP/forecast/grids/L0/NewEngland_qck_grid.nc' # can be a thredds url
 #Vertical coordinate information
 L0Vtransform= 2
 L0Vstretching= 4
@@ -41,8 +42,9 @@ L0hc=200
 L0N=50
 #Donor inputfiles
 datadir=f'/home/hunter/roms/NOPP/forecast/{today}/roms_L0/'# can be a thredds url
-L0his=datadir+'roms_his_forNewEngland.nc' 
-L0qck=datadir+'roms_qck_forNewEngland.nc' 
+L0his=datadir+'noppL0_ocean_his.nc' 
+#L0qck=datadir+'roms_qck_forNewEngland.nc' 
+L0qck=datadir+'noppL0_ocean_qck.nc' 
 
 
 #Receiver Grid Info
@@ -115,14 +117,14 @@ def main():
     #Lazy read Input model files 
     dsqckl0=xr.open_dataset(L0qck)
     dshisl0=xr.open_dataset(L0his)
-    dsqckl0=xr.merge([dsqckl0,dsgrd])
+    dsqckl0=xr.merge([dsqckl0,dsgrd],compat='override')
     
     #extract only history file times from quick files
     dsl0sub=dsqckl0.sel(ocean_time=dshisl0.ocean_time.values)
     
     
     
-    dshisl0=xr.merge([dshisl0,dsgrd])
+    dshisl0=xr.merge([dshisl0,dsgrd],compat='override')
     dshisl0['ubar']=dsl0sub['ubar']
     dshisl0['vbar']=dsl0sub['vbar']
     dshisl0['zeta']=dsl0sub['zeta']

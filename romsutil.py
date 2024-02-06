@@ -761,14 +761,16 @@ def create_clm_file(initfile,grd,tunits):
     fh.createDimension('eu', dims['eta_rho'])
     fh.createDimension('ev', dims['eta_v'])
     fh.createDimension('s_rho', atts['sc_r'])
-    fh.createDimension('s_rho', atts['sc_r'])
     
-    fh.createDimension('ocean_time', atts['t3d'])
-    fh.createDimension('zeta_time', atts['t3d'])
-    fh.createDimension('v2d_time', atts['t3d'])
-    fh.createDimension('v3d_time', atts['t3d'])
-    fh.createDimension('salt_time', atts['t3d'])
-    fh.createDimension('temp_time', atts['t3d'])
+    fh.createDimension('ocean_time', None)
+    fh.createDimension('zeta_time', None)
+    fh.createDimension('v2d_time', None)
+    fh.createDimension('v3d_time', None)
+    fh.createDimension('salt_time', None)
+    fh.createDimension('temp_time', None)
+
+
+
     fh.createDimension('one', 1)
     
     #Define the Variabkes in the file
