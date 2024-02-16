@@ -154,7 +154,7 @@ def stretching(Vstretching, theta_s, theta_b, hc, N, kgrid):
 
 
 
-def create_init_file(initfile,grd):
+def create_init_file(initfile,grd,tunits):
     """
     create_init_file(initfile,grd)
 
@@ -288,7 +288,7 @@ def create_init_file(initfile,grd):
 
     fh.createVariable('ocean_time','double',('time'));
     fh.variables['ocean_time'].long_name='time since initialization'
-    fh.variables['ocean_time'].units ='days'
+    fh.variables['ocean_time'].units =tunits
     fh.variables['ocean_time'].field ='ocean_time, scalar, series'
     
     fh.createVariable('salt','float',('time','sc_r','erho','xrho'));

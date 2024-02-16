@@ -26,15 +26,13 @@ warnings.filterwarnings("ignore")
 #Set time
 today=datetime.datetime.now().strftime('%Y%m%d')
 today='20221102'
-
-reftime=datetime.datetime(1858,11,17)
-tunits=reftime.strftime('days since %Y-%m-%d')
-rtime=np.datetime64(reftime.date())
+tunits=datetime.datetime.now().strftime('days since %Y-%m-%d')
+rtime=np.datetime64(datetime.datetime.now().date())
 
 #Donor grid Info
 # % Enter vertical characteristics for the L0 grid
-#L0grdfile='/home/hunter/roms/NOPP/forecast/grids/L0/useast_grd5_2_cnapsv2.nc'
-L0grdfile='/home/hunter/roms/NOPP/forecast/grids/L0/NewEngland_qck_grid.nc' # can be a thredds url
+L0grdfile='/home/hunter/roms/NOPP/forecast/grids/L0/useast_grd5_2_cnapsv2.nc'
+#L0grdfile='/home/hunter/roms/NOPP/forecast/grids/L0/NewEngland_qck_grid.nc' # can be a thredds url
 #Vertical coordinate information
 L0Vtransform= 2
 L0Vstretching= 4
@@ -44,8 +42,9 @@ L0hc=200
 L0N=50
 #Donor inputfiles
 datadir=f'/home/hunter/roms/NOPP/forecast/{today}/roms_L0/'# can be a thredds url
-L0his=datadir+'roms_his_forNewEngland.nc' 
-L0qck=datadir+'roms_qck_forNewEngland.nc' 
+L0his=datadir+'noppL0_ocean_his.nc' 
+#L0qck=datadir+'roms_qck_forNewEngland.nc' 
+L0qck=datadir+'noppL0_ocean_qck.nc' 
 
 
 #Receiver Grid Info
@@ -86,8 +85,8 @@ t3end=t3step*t3N
 
 #Output file flags, if True create file
 INIflag=True
-CLMflag=True
-BRYflag=True
+CLMflag=False
+BRYflag=False
 
 
 
@@ -132,7 +131,7 @@ def main():
     dshisl0['s_w']=('s_w',s_w_L0)
     dshisl0['Cs_w']=('s_w',C_w_L0)
     dshisl0['s_r']=('s_rho',s_r_L0)
-    dshisl0['Cs_r']=('s_rho',C_r_L0)
+    dshisl0['Cs_r']=('s_rho',C_r_L0)    
     dshisl0.attrs['hc']=L0hc
     
     
@@ -908,7 +907,7 @@ def downscale_init_file(cfgrd,dshisl0,dsl0sub):
     regridder = xe.Regridder( tmp,varnew, "bilinear",extrap_method="nearest_s2d")  
   
   
-    rutil.create_init_file(inifile,cfgrd,tunits)
+    rutil.create_init_file(inifile,cfgrd)
     dsqckl0_I=dsl0sub.isel(ocean_time=0)
     dshisl0_I=dshisl0.isel(ocean_time=0)
     
@@ -1044,11 +1043,6 @@ def downscale_init_file(cfgrd,dshisl0,dsl0sub):
     
     print(['Writing initialization data to file'+inifile])
     ncid = nc.Dataset(inifile, "r+", format="NETCDF4")
-    
-    t=xromhisL1_z.ocean_time.values
-    timeout=(t-np.datetime64(rtime)) / np.timedelta64(1, 'D')
-    ncid.variables['ocean_time'][:]=timeout
-    
     
     ncid.variables['ubar'][0,:,:]=xromhisL1_z.ubar.values[:,:]
     ncid.variables['vbar'][0,:,:]=xromhisL1_z.vbar.values[:,:]
