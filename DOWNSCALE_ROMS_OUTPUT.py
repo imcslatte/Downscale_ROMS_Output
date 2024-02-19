@@ -33,8 +33,8 @@ rtime=np.datetime64(reftime.date())
 
 #Donor grid Info
 # % Enter vertical characteristics for the L0 grid
-#L0grdfile='/home/hunter/roms/NOPP/forecast/grids/L0/useast_grd5_2_cnapsv2.nc'
-L0grdfile='/home/hunter/roms/NOPP/forecast/grids/L0/NewEngland_qck_grid.nc' # can be a thredds url
+L0grdfile='/home/hunter/roms/NOPP/data/test/FL_qck_grid.nc'
+#L0grdfile='/home/hunter/roms/NOPP/forecast/grids/L0/NewEngland_qck_grid.nc' # can be a thredds url
 #Vertical coordinate information
 L0Vtransform= 2
 L0Vstretching= 4
@@ -44,12 +44,15 @@ L0hc=200
 L0N=50
 #Donor inputfiles
 datadir=f'/home/hunter/roms/NOPP/forecast/{today}/roms_L0/'# can be a thredds url
-L0his=datadir+'roms_his_forNewEngland.nc' 
-L0qck=datadir+'roms_qck_forNewEngland.nc' 
+datadir='/home/hunter/roms/NOPP/data/test/'
+#L0his=datadir+'roms_his_forNewEngland.nc' 
+#L0qck=datadir+'roms_qck_forNewEngland.nc' 
+L0his=datadir+'ian_roms_his_forFL.nc' 
+L0qck=datadir+'ian_roms_qck_forFL.nc' 
 
 
 #Receiver Grid Info
-L1grdfile='/home/hunter/roms/NOPP/forecast/grids/L1/NYBIGHT_grd_L1.nc' # can be a thredds url
+L1grdfile='/home/hunter/roms/NOPP/data/test/GOMSAB_2km_ext_smooth.nc' # can be a thredds url
 L1theta_s=8.0
 L1theta_b=4.0
 L1Tcline=20.0
@@ -70,9 +73,9 @@ NNS=1
 
 #Receiver Output files
 #inifile=f'/home/hunter/roms/NOPP/output/receiver_{today}_ini.nc'
-inifile=f'/home/hunter/roms/NOPP/output/receiver_{today}_ini.nc'
-bryfile=f'/home/hunter/roms/NOPP/output/receiver_{today}_bry.nc'
-clmfile=f'/home/hunter/roms/NOPP/output/receiver_{today}_clm.nc'
+inifile=f'/home/hunter/roms/NOPP/output/receiver2_{today}_ini.nc'
+bryfile=f'/home/hunter/roms/NOPP/output/receiver2_{today}_bry.nc'
+clmfile=f'/home/hunter/roms/NOPP/output/receiver2_{today}_clm.nc'
 
 #Receiver Output time dimensoons
 #High resolution time dimension, maybe barotropic  
@@ -186,24 +189,24 @@ def downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
     varnew_south=xroms.subset(cfgrd,Y=slice(0,3))
     varnew_south=varnew_south.rename({'lat_rho':'lat'})
     varnew_south=varnew_south.rename({'lon_rho':'lon'})
-    varnew_south=varnew_south.rename({'mask_rho':'mask'})
+    #varnew_south=varnew_south.rename({'mask_rho':'mask'})
 
     varnew_north=xroms.subset(cfgrd,Y=slice(cfgrd.sizes['eta_rho']-3,cfgrd.sizes['eta_rho']))
     varnew_north=varnew_north.rename({'lat_rho':'lat'})
     varnew_north=varnew_north.rename({'lon_rho':'lon'})
-    varnew_north=varnew_north.rename({'mask_rho':'mask'})
+    #varnew_north=varnew_north.rename({'mask_rho':'mask'})
 
 
     varnew_west=xroms.subset(cfgrd,X=slice(0,3))
     varnew_west=varnew_west.rename({'lat_rho':'lat'})
     varnew_west=varnew_west.rename({'lon_rho':'lon'})
-    varnew_west=varnew_west.rename({'mask_rho':'mask'})
+    #varnew_west=varnew_west.rename({'mask_rho':'mask'})
 
 
     varnew_east=xroms.subset(cfgrd,X=slice(cfgrd.sizes['xi_rho']-3,cfgrd.sizes['xi_rho']))
     varnew_east=varnew_east.rename({'lat_rho':'lat'})
     varnew_east=varnew_east.rename({'lon_rho':'lon'})
-    varnew_east=varnew_east.rename({'mask_rho':'mask'})
+    #varnew_east=varnew_east.rename({'mask_rho':'mask'})
     
     regridder_W = xe.Regridder( tmp,varnew_west, "bilinear",extrap_method="nearest_s2d",locstream_out=False)
     regridder_E = xe.Regridder( tmp,varnew_east, "bilinear",extrap_method="nearest_s2d",locstream_out=False)
@@ -307,7 +310,7 @@ def downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
 ##############################################################################################
 #Loading Data for interpolation
 ##############################################################################################
-        maskN=xromhisL1_N_z.mask.isel(eta_rho=-1).values
+        maskN=xromhisL1_N_z.mask_rho.isel(eta_rho=-1).values
         tmpNz=xromhisL1_N.z_rho.isel(eta_rho=-1).values
         tmpNz2=xromhisL1_N_z.z_rho.isel(eta_rho=-1).values
         tempN=xromhisL1_N.temp.isel(eta_rho=-1).values
@@ -315,7 +318,7 @@ def downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
         u_eastN=xromhisL1_N.u_eastward.isel(eta_rho=-1).values
         v_northN=xromhisL1_N.v_northward.isel(eta_rho=-1).values
         
-        maskS=xromhisL1_S_z.mask.isel(eta_rho=0).values
+        maskS=xromhisL1_S_z.mask_rho.isel(eta_rho=0).values
         tmpSz=xromhisL1_S.z_rho.isel(eta_rho=0).values
         tmpSz2=xromhisL1_S_z.z_rho.isel(eta_rho=0).values
         tempS=xromhisL1_S.temp.isel(eta_rho=0).values
@@ -331,11 +334,11 @@ def downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
         
             #North 
         
-                maskflag=maskN[xi]
+                # maskflag=maskN[xi]
           
-                if maskflag==0.0:
-                    pass
-                else:
+                # if maskflag==0.0:
+                #     pass
+                # else:
                     
                     ifun=interp1d(tmpNz[:,xi],tempN[:,xi],kind='cubic',bounds_error=False,fill_value=(tempN[0,xi],tempN[-1,xi]))
                     temp['north'][:,xi]=ifun(tmpNz2[:,xi])
@@ -350,11 +353,11 @@ def downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
                     v_north['north'][:,xi]=ifun(tmpNz2[:,xi])
 
             #South
-                maskflag=maskS[xi]
+                # maskflag=maskS[xi]
              
-                if maskflag==0.0:
-                    pass
-                else:
+                # if maskflag==0.0:
+                #     pass
+                # else:
         
                  
                     ifun=interp1d(tmpSz[:,xi],tempS[:,xi],kind='cubic',bounds_error=False,fill_value=(tempN[0,xi],tempN[-1,xi]))
@@ -373,7 +376,7 @@ def downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
                   
         
      #   print('Processing East/West Boundaries, loading data')
-        maskW=xromhisL1_W_z.mask.isel(xi_rho=0).values
+        maskW=xromhisL1_W_z.mask_rho.isel(xi_rho=0).values
         tmpWz=xromhisL1_W.z_rho.isel(xi_rho=0).values
         tmpWz2=xromhisL1_W_z.z_rho.isel(xi_rho=0).values
         tempW=xromhisL1_W.temp.isel(xi_rho=0).values
@@ -381,7 +384,7 @@ def downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
         u_eastW=xromhisL1_W.u_eastward.isel(xi_rho=0).values
         v_northW=xromhisL1_W.v_northward.isel(xi_rho=0).values
         
-        maskE=xromhisL1_E_z.mask.isel(xi_rho=-1).values
+        maskE=xromhisL1_E_z.mask_rho.isel(xi_rho=-1).values
         tmpEz=xromhisL1_E.z_rho.isel(xi_rho=-1).values
         tmpEz2=xromhisL1_E_z.z_rho.isel(xi_rho=-1).values
         tempE=xromhisL1_E.temp.isel(xi_rho=-1).values
@@ -397,11 +400,11 @@ def downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
         
             #West 
                
-                maskflag=maskW[eta]
-                if maskflag==0.0:
-                    pass
-                else:
-                    print('west')
+                # maskflag=maskW[eta]
+                # if maskflag==0.0:
+                #     pass
+                # else:
+                 #   print('west')
                     ifun=interp1d(tmpWz[:,eta],tempW[:,eta],kind='cubic',bounds_error=False,fill_value=(tempW[0,eta],tempW[-1,eta]))
                     temp['west'][:,eta]=ifun(tmpWz2[:,eta])
                   
@@ -415,12 +418,12 @@ def downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
                     v_north['west'][:,eta]=ifun(tmpWz2[:,eta])
 
             #East
-                maskflag=maskE[eta]
+                # maskflag=maskE[eta]
              
             
-                if maskflag==0.0:
-                    pass
-                else:
+                # if maskflag==0.0:
+                #     pass
+                # else:
         
                     ifun=interp1d(tmpEz[:,eta],tempE[:,eta],kind='cubic',bounds_error=False,fill_value=(tempE[0,eta],tempE[-1,eta]))
                     temp['east'][:,eta]=ifun(tmpEz2[:,eta])
@@ -719,7 +722,7 @@ def downscale_clm_file(cfgrd,dshisl0,dsl0sub):
     varnew =cfgrd
     varnew=varnew.rename({'lat_rho':'lat'})
     varnew=varnew.rename({'lon_rho':'lon'})
-    varnew=varnew.rename({'mask_rho':'mask'})
+  #  varnew=varnew.rename({'mask_rho':'mask'})
     regridder = xe.Regridder( tmp,varnew, "bilinear",extrap_method="nearest_s2d")  
     
     print(f'Processing Climatology file: {clmfile}')
@@ -797,7 +800,7 @@ def downscale_clm_file(cfgrd,dshisl0,dsl0sub):
 ##############################################################################################
 #Loading Data for interpolation
 ##############################################################################################
-        mask=xromhisL1_z.mask.values
+        mask=xromhisL1_z.mask_rho.values
         tmpz=xromhisL1.z_rho.values
         tmpz2=xromhisL1_z.z_rho.values
         temp_I=xromhisL1.temp.values
@@ -811,9 +814,9 @@ def downscale_clm_file(cfgrd,dshisl0,dsl0sub):
         start_time=time.time()
         for eta in range(0,dim_dict['eta_rho']):
             for xi in range(0,dim_dict['xi_rho']):
-                maskflag=mask[eta,xi]
-                if maskflag==0.0:
-                    continue
+           #     maskflag=mask[eta,xi]
+           #     if maskflag==0.0:
+           #         continue
                     
  
                 ifun=interp1d(tmpz[:,eta,xi],temp_I[:,eta,xi],kind='cubic',bounds_error=False,fill_value=(temp_I[0,eta,xi],temp_I[-1,eta,xi]))
@@ -903,7 +906,7 @@ def downscale_init_file(cfgrd,dshisl0,dsl0sub):
     varnew =cfgrd
     varnew=varnew.rename({'lat_rho':'lat'})
     varnew=varnew.rename({'lon_rho':'lon'})
-    varnew=varnew.rename({'mask_rho':'mask'})
+  #  varnew=varnew.rename({'mask_rho':'mask'})
     #regridder = xe.Regridder(tmp, varnew, "bilinear", locstream_out=locstream_out)
     regridder = xe.Regridder( tmp,varnew, "bilinear",extrap_method="nearest_s2d")  
   
@@ -934,8 +937,8 @@ def downscale_init_file(cfgrd,dshisl0,dsl0sub):
     xromqckL0 = xromqckL0.drop_vars([var for var in xromqckL0.variables if dimension_to_remove in xromqckL0[var].dims])
     xromhisL0 = xromhisL0.drop_vars([var for var in xromhisL0.variables if dimension_to_remove in xromhisL0[var].dims])
     
-    xromhisL0=xromhisL0.rename({'mask_rho':'mask'})
-    xromqckL0=xromqckL0.rename({'mask_rho':'mask'})
+    #xromhisL0=xromhisL0.rename({'mask_rho':'mask'})
+    #xromqckL0=xromqckL0.rename({'mask_rho':'mask'})
 
     xromqckL1 = regridder(xromqckL0,keep_attrs=True)
     xromqckL1['xi_u']=varnew['xi_u']
@@ -970,7 +973,7 @@ def downscale_init_file(cfgrd,dshisl0,dsl0sub):
     
     print('Running vertical interpolation, this may take a few minutes')
     
-    mask=xromhisL1_z.mask.values
+    mask=xromhisL1_z.mask_rho.values
     tmpz=xromhisL1.z_rho.values
     tmpz2=xromhisL1_z.z_rho.values
     temp_I=xromhisL1.temp.values
@@ -983,8 +986,8 @@ def downscale_init_file(cfgrd,dshisl0,dsl0sub):
     for eta in range(0,dim_dict['eta_rho']):
         for xi in range(0,dim_dict['xi_rho']):
             maskflag=mask[eta,xi]
-            if maskflag==0.0:
-                continue
+         #   if maskflag==0.0:
+         #       continue
 
     
             ifun=interp1d(tmpz[:,eta,xi],temp_I[:,eta,xi],kind='cubic',bounds_error=False,fill_value=(temp_I[0,eta,xi],temp_I[-1,eta,xi]))
