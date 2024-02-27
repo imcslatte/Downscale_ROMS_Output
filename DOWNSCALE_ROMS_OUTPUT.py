@@ -88,8 +88,8 @@ t3N=6
 t3end=t3step*t3N
 
 #Output file flags, if True create file
-INIflag=True
-CLMflag=True
+INIflag=False
+CLMflag=False
 BRYflag=True
 
 
@@ -123,6 +123,11 @@ def main():
     dshisl0=xr.open_dataset(L0his)
     dsqckl0=xr.merge([dsqckl0,dsgrd],compat='override')
     
+    
+    dsqckl0['ubar']=dsqckl0['ubar'].interpolate_na(dim='xi_u', method='nearest',fill_value='extrapolate')
+    dsqckl0['vbar']=dsqckl0['vbar'].interpolate_na(dim='eta_v', method='nearest',fill_value='extrapolate')
+
+
     #extract only history file times from quick files
     dsl0sub=dsqckl0.sel(ocean_time=dshisl0.ocean_time.values)
     
@@ -142,8 +147,8 @@ def main():
     #tmp=dsl0sub.zeta  
 
             
-    dsl0sub['ubar']=dsl0sub['ubar'].interpolate_na(dim='xi_u', method='nearest',fill_value='extrapolate')
-    dsl0sub['vbar']=dsl0sub['vbar'].interpolate_na(dim='eta_v', method='nearest',fill_value='extrapolate')
+ #   dsl0sub['ubar']=dsl0sub['ubar'].interpolate_na(dim='xi_u', method='nearest',fill_value='extrapolate')
+ #   dsl0sub['vbar']=dsl0sub['vbar'].interpolate_na(dim='eta_v', method='nearest',fill_value='extrapolate')
     dshisl0['u']=dshisl0['u'].interpolate_na(dim='xi_u', method='nearest',fill_value='extrapolate')
     dshisl0['v']=dshisl0['v'].interpolate_na(dim='eta_v', method='nearest',fill_value='extrapolate')
             
