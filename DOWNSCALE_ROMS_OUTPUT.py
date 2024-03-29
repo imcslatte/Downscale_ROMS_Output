@@ -89,8 +89,8 @@ t3end=t3step*t3N
 
 #Output file flags, if True create file
 INIflag=False
-CLMflag=False
-BRYflag=True
+CLMflag=True
+BRYflag=False
 
 
 
@@ -741,10 +741,19 @@ def downscale_clm_file(cfgrd,dshisl0,dsl0sub):
     times_00Z =dshisl0.ocean_time.values[dshisl0.ocean_time.values.astype('datetime64[D]') == dshisl0.ocean_time.values]
     for ind,t in enumerate(times_00Z):
         print(f'Procesing Climatology time: {t}')
-        dsqckl0_I=dsl0sub.isel(ocean_time=0)
-        dshisl0_I=dshisl0.isel(ocean_time=0)
+      #  dsqckl0_I=dsl0sub.isel(ocean_time=0) #Wildly wrong
+      #  dshisl0_I=dshisl0.isel(ocean_time=0) #Wildly wrong
+        time_index = dsl0sub.get_index('ocean_time')
+        ind_qck = time_index.get_loc(dshisl0.ocean_time[ind].values)
+        dsqckl0_I=dsl0sub.isel(ocean_time=ind_qck)
+      #  print(dsqckl0_I.ocean_time)
+        dshisl0_I=dshisl0.isel(ocean_time=ind)
+      #  print(dshisl0_I.ocean_time)
+        
         dshisl0_I.load()
         dsqckl0_I.load()
+        
+        
         #convert UV to rho grid and rotate by angle.  
         (xromqckL0,gridqckL0)=xroms.roms_dataset(dsqckl0_I,Vtransform=L0Vtransform)
         uv=rutil.uv_rot_2d(xromqckL0.ubar, xromqckL0.vbar, gridqckL0,xromqckL0.angle)
