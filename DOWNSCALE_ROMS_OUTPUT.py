@@ -745,10 +745,10 @@ def downscale_clm_file(cfgrd,dshisl0,dsl0sub):
       #  dshisl0_I=dshisl0.isel(ocean_time=0) #Wildly wrong
         ind_qck= dsl0sub.get_index('ocean_time').get_loc(t)
         dsqckl0_I=dsl0sub.isel(ocean_time=ind_qck)
-        print(dsqckl0_I.ocean_time.values)
+      #  print(dsqckl0_I.ocean_time.values)
         ind= dshisl0.get_index('ocean_time').get_loc(t)
         dshisl0_I=dshisl0.isel(ocean_time=ind)
-        print(dshisl0_I.ocean_time.values)
+      #  print(dshisl0_I.ocean_time.values)
         
         dshisl0_I.load()
         dsqckl0_I.load()
