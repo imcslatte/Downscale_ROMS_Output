@@ -599,7 +599,7 @@ def downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
         
         xromqckL1_S = regridder_S(xromqckL0,keep_attrs=True)
         xromqckL1_S=xromqckL1_S.drop_vars(['lon_psi','lat_psi'])
-        xromhqckL1_S['xi_u']=varnew_south['xi_u']
+        xromqckL1_S['xi_u']=varnew_south['xi_u']
         xromqckL1_S['eta_v']=varnew_south['eta_v']
         xromqckL1_S=rechunk_eta_xi(xromqckL1_S)
         (xromqckL1_S,gridqckL1_S)=xroms.roms_dataset(xromqckL1_S,Vtransform=L1Vtransform)
