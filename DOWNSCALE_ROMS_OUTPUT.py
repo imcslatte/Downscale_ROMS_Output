@@ -609,14 +609,14 @@ def downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
         xromqckL1_E['xi_u']=varnew_east['xi_u']
         xromqckL1_E['eta_v']=varnew_east['eta_v']
         xromqckL1_E=rechunk_eta_xi(xromqckL1_E)
-        (xromqckL1_E,gridhisL1_E)=xroms.roms_dataset(xromqckL1_E,Vtransform=L1Vtransform)
+        (xromqckL1_E,gridqckL1_E)=xroms.roms_dataset(xromqckL1_E,Vtransform=L1Vtransform)
     
         xromqckL1_W = regridder_W(xromqckL0,keep_attrs=True)
         xromqckL1_W=xromqckL1_W.drop_vars(['lon_psi','lat_psi'])
         xromqckL1_W['xi_u']=varnew_west['xi_u']
         xromqckL1_W['eta_v']=varnew_west['eta_v']
         xromqckL1_W=rechunk_eta_xi(xromqckL1_W)
-        (xromqckL1_W,gridhisL1_W)=xroms.roms_dataset(xromqckL1_W,Vtransform=L1Vtransform)
+        (xromqckL1_W,gridqckL1_W)=xroms.roms_dataset(xromqckL1_W,Vtransform=L1Vtransform)
 
 
     ##############################################################################################
@@ -628,17 +628,17 @@ def downscale_bdry_file(cfgrd,dsqckl0,dshisl0,dsl0sub):
         rv=uv[1]
         xromqckL1_N=xr.merge([xromqckL1_N,ru,rv])
 
-        uv=rutil.uv_rot_2d(xromqckL1_S.ubar_eastward, xromqckL1_S.vbar_northward, gridhisL1_S,xromqckL1_S.angle,reverse=True)
+        uv=rutil.uv_rot_2d(xromqckL1_S.ubar_eastward, xromqckL1_S.vbar_northward, gridqckL1_S,xromqckL1_S.angle,reverse=True)
         ru=uv[0]
         rv=uv[1]
         xromqckL1_S=xr.merge([xromqckL1_S,ru,rv])
         
-        uv=rutil.uv_rot_2d(xromqckL1_E.ubar_eastward, xromqckL1_E.vbar_northward, gridhisL1_E,xromqckL1_E.angle,reverse=True)
+        uv=rutil.uv_rot_2d(xromqckL1_E.ubar_eastward, xromqckL1_E.vbar_northward, gridqckL1_E,xromqckL1_E.angle,reverse=True)
         ru=uv[0]
         rv=uv[1]
         xromqckL1_E=xr.merge([xromqckL1_E,ru,rv])
         
-        uv=rutil.uv_rot_2d(xromqckL1_W.ubar_eastward, xromqckL1_W.vbar_northward, gridhisL1_W,xromqckL1_W.angle,reverse=True)
+        uv=rutil.uv_rot_2d(xromqckL1_W.ubar_eastward, xromqckL1_W.vbar_northward, gridqckL1_W,xromqckL1_W.angle,reverse=True)
         ru=uv[0]
         rv=uv[1]
         xromqckL1_W=xr.merge([xromqckL1_W,ru,rv])
